@@ -2,6 +2,8 @@
 
 A comprehensive web-based application for managing student admissions, built with Python Flask framework. This system provides a complete solution for educational institutions to handle student applications, admin review processes, and automated admission letter generation.
 
+## live :  https://student-admissions.onrender.com
+
 ## 🎯 Project Overview
 
 The Student Admission System is designed to streamline the entire admission process from application submission to final decision. It features:
