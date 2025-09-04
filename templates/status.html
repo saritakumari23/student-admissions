@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Application Status - Student Admission System{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0"><i class="fas fa-search me-2"></i>Application Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Application ID</h5>
+                            <p class="text-muted">{{ application.application_id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Status</h5>
+                            {% if application.status == 'pending' %}
+                                <span class="badge bg-warning status-badge">Pending Review</span>
+                            {% elif application.status == 'approved' %}
+                                <span class="badge bg-success status-badge">Approved</span>
+                            {% elif application.status == 'rejected' %}
+                                <span class="badge bg-danger status-badge">Rejected</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Personal Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Name:</strong></td>
+                                    <td>{{ application.first_name }} {{ application.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>{{ application.email }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Phone:</strong></td>
+                                    <td>{{ application.phone }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date of Birth:</strong></td>
+                                    <td>{{ application.date_of_birth.strftime('%B %d, %Y') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Academic Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Program:</strong></td>
+                                    <td>{{ application.program.replace('_', ' ').title() }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>GPA:</strong></td>
+                                    <td>{{ application.gpa }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Submitted:</strong></td>
+                                    <td>{{ application.submitted_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                </tr>
+                                {% if application.reviewed_at %}
+                                <tr>
+                                    <td><strong>Reviewed:</strong></td>
+                                    <td>{{ application.reviewed_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if application.status == 'approved' %}
+                        <div class="alert alert-success mt-4">
+                            <h6><i class="fas fa-check-circle me-2"></i>Congratulations!</h6>
+                            <p class="mb-2">Your application has been approved. You can now download your admission letter.</p>
+                            <a href="{{ url_for('download_admission_letter', app_id=application.id) }}" class="btn btn-success">
+                                <i class="fas fa-download me-2"></i>Download Admission Letter
+                            </a>
+                        </div>
+                    {% elif application.status == 'rejected' %}
+                        <div class="alert alert-danger mt-4">
+                            <h6><i class="fas fa-times-circle me-2"></i>Application Status</h6>
+                            <p class="mb-0">Your application has been rejected. Please contact the admissions office for more information.</p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mt-4">
+                            <h6><i class="fas fa-clock me-2"></i>Application Under Review</h6>
+                            <p class="mb-0">Your application is currently being reviewed by our admissions committee. You will be notified once a decision has been made.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">Back to Home</a>
+                        <a href="{{ url_for('apply') }}" class="btn btn-primary">Submit Another Application</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

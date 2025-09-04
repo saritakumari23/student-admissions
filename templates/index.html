@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Student Admission System{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Welcome to Student Admission System</h1>
+                <p class="lead mb-4">Streamline your academic journey with our comprehensive admission platform. Submit your application, track your status, and receive your admission letter all in one place.</p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('apply') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-edit me-2"></i>Apply Now
+                    </a>
+                    <a href="{{ url_for('admin_login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-user-shield me-2"></i>Admin Login
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-graduation-cap" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Easy Application</h5>
+                    <p class="card-text">Submit your application with all required documents through our user-friendly form. Get instant confirmation and tracking.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-search fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Track Status</h5>
+                    <p class="card-text">Monitor your application status in real-time. Receive notifications when your application is reviewed.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-download fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Download Letter</h5>
+                    <p class="card-text">Once approved, download your official admission letter in PDF format for your records.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>How It Works</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-1 me-2 text-primary"></i>Submit Application</h6>
+                            <p>Fill out the application form with your personal and academic details. Upload required documents.</p>
+                            
+                            <h6><i class="fas fa-2 me-2 text-primary"></i>Review Process</h6>
+                            <p>Our admissions committee will review your application and make a decision.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-3 me-2 text-primary"></i>Status Update</h6>
+                            <p>Track your application status through your unique application ID.</p>
+                            
+                            <h6><i class="fas fa-4 me-2 text-primary"></i>Receive Letter</h6>
+                            <p>If approved, download your official admission letter in PDF format.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

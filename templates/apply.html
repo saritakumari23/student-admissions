@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Apply - Student Admission System{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-edit me-2"></i>Student Application Form</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id }}" class="form-label">{{ form.first_name.label }}</label>
+                                {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.first_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id }}" class="form-label">{{ form.last_name.label }}</label>
+                                {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.last_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id }}" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone.id }}" class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else "")) }}
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.phone.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.date_of_birth.id }}" class="form-label">{{ form.date_of_birth.label }}</label>
+                            {{ form.date_of_birth(class="form-control" + (" is-invalid" if form.date_of_birth.errors else "")) }}
+                            {% if form.date_of_birth.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.date_of_birth.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.address.id }}" class="form-label">{{ form.address.label }}</label>
+                            {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), rows="3") }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.address.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.program.id }}" class="form-label">{{ form.program.label }}</label>
+                                {{ form.program(class="form-select" + (" is-invalid" if form.program.errors else "")) }}
+                                {% if form.program.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.program.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.gpa.id }}" class="form-label">{{ form.gpa.label }}</label>
+                                {{ form.gpa(class="form-control" + (" is-invalid" if form.gpa.errors else "")) }}
+                                {% if form.gpa.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.gpa.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.previous_education.id }}" class="form-label">{{ form.previous_education.label }}</label>
+                            {{ form.previous_education(class="form-control" + (" is-invalid" if form.previous_education.errors else ""), rows="4") }}
+                            {% if form.previous_education.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.previous_education.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.degree_certificate.id }}" class="form-label">{{ form.degree_certificate.label }}</label>
+                                {{ form.degree_certificate(class="form-control" + (" is-invalid" if form.degree_certificate.errors else "")) }}
+                                {% if form.degree_certificate.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.degree_certificate.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Upload your degree certificate (PDF, JPG, PNG)</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.id_proof.id }}" class="form-label">{{ form.id_proof.label }}</label>
+                                {{ form.id_proof(class="form-control" + (" is-invalid" if form.id_proof.errors else "")) }}
+                                {% if form.id_proof.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.id_proof.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">Upload your ID proof (Passport, Driver's License, etc.)</small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
