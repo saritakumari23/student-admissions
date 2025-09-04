@@ -1,4 +1,5 @@
 import os
+import tempfile
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -13,16 +14,21 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 import io
 import uuid
+import traceback
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///admissions.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///admissions.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Use temp directory for uploads on Render
+if os.environ.get('RENDER'):
+    app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+else:
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 db = SQLAlchemy(app)
 
@@ -101,40 +107,58 @@ def index():
 def apply():
     form = ApplicationForm()
     if form.validate_on_submit():
-        # Generate unique application ID
-        application_id = f"APP{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
-        
-        # Save uploaded files
-        degree_cert = form.degree_certificate.data
-        id_proof_file = form.id_proof.data
-        
-        degree_filename = secure_filename(f"{application_id}_degree_{degree_cert.filename}")
-        id_filename = secure_filename(f"{application_id}_id_{id_proof_file.filename}")
-        
-        degree_cert.save(os.path.join(app.config['UPLOAD_FOLDER'], degree_filename))
-        id_proof_file.save(os.path.join(app.config['UPLOAD_FOLDER'], id_filename))
-        
-        # Create application record
-        application = Application(
-            application_id=application_id,
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            date_of_birth=datetime.strptime(form.date_of_birth.data, '%Y-%m-%d').date(),
-            address=form.address.data,
-            program=form.program.data,
-            previous_education=form.previous_education.data,
-            gpa=float(form.gpa.data),
-            degree_certificate=degree_filename,
-            id_proof=id_filename
-        )
-        
-        db.session.add(application)
-        db.session.commit()
-        
-        flash(f'Application submitted successfully! Your application ID is: {application_id}', 'success')
-        return redirect(url_for('application_status', application_id=application_id))
+        try:
+            # Generate unique application ID
+            application_id = f"APP{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+            
+            # Save uploaded files
+            degree_cert = form.degree_certificate.data
+            id_proof_file = form.id_proof.data
+            
+            if not degree_cert or not id_proof_file:
+                flash('Please upload both required documents.', 'error')
+                return render_template('apply.html', form=form)
+            
+            degree_filename = secure_filename(f"{application_id}_degree_{degree_cert.filename}")
+            id_filename = secure_filename(f"{application_id}_id_{id_proof_file.filename}")
+            
+            # Save files with error handling
+            try:
+                degree_cert.save(os.path.join(app.config['UPLOAD_FOLDER'], degree_filename))
+                id_proof_file.save(os.path.join(app.config['UPLOAD_FOLDER'], id_filename))
+            except Exception as e:
+                app.logger.error(f"File save error: {str(e)}")
+                flash('Error saving uploaded files. Please try again.', 'error')
+                return render_template('apply.html', form=form)
+            
+            # Create application record
+            application = Application(
+                application_id=application_id,
+                first_name=form.first_name.data,
+                last_name=form.last_name.data,
+                email=form.email.data,
+                phone=form.phone.data,
+                date_of_birth=datetime.strptime(form.date_of_birth.data, '%Y-%m-%d').date(),
+                address=form.address.data,
+                program=form.program.data,
+                previous_education=form.previous_education.data,
+                gpa=float(form.gpa.data),
+                degree_certificate=degree_filename,
+                id_proof=id_filename
+            )
+            
+            db.session.add(application)
+            db.session.commit()
+            
+            flash(f'Application submitted successfully! Your application ID is: {application_id}', 'success')
+            return redirect(url_for('application_status', application_id=application_id))
+            
+        except Exception as e:
+            app.logger.error(f"Application submission error: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            db.session.rollback()
+            flash('An error occurred while submitting your application. Please try again.', 'error')
+            return render_template('apply.html', form=form)
     
     return render_template('apply.html', form=form)
 
@@ -198,16 +222,27 @@ def reject_application(app_id):
 
 @app.route('/download_letter/<int:app_id>')
 def download_admission_letter(app_id):
-    application = Application.query.get_or_404(app_id)
-    if application.status != 'approved' or not application.admission_letter_path:
-        flash('Admission letter not available!', 'error')
+    try:
+        application = Application.query.get_or_404(app_id)
+        if application.status != 'approved' or not application.admission_letter_path:
+            flash('Admission letter not available!', 'error')
+            return redirect(url_for('application_status', application_id=application.application_id))
+        
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], application.admission_letter_path)
+        
+        if not os.path.exists(file_path):
+            flash('Admission letter file not found!', 'error')
+            return redirect(url_for('application_status', application_id=application.application_id))
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=f'admission_letter_{application.application_id}.pdf'
+        )
+    except Exception as e:
+        app.logger.error(f"Download error: {str(e)}")
+        flash('Error downloading admission letter. Please try again.', 'error')
         return redirect(url_for('application_status', application_id=application.application_id))
-    
-    return send_file(
-        application.admission_letter_path,
-        as_attachment=True,
-        download_name=f'admission_letter_{application.application_id}.pdf'
-    )
 
 def generate_admission_letter(application):
     """Generate PDF admission letter for approved application"""
@@ -296,6 +331,19 @@ def generate_admission_letter(application):
     doc.build(story)
     return filepath
 
+# Global error handler
+@app.errorhandler(500)
+def internal_error(error):
+    app.logger.error(f"500 error: {error}")
+    app.logger.error(traceback.format_exc())
+    flash('An internal server error occurred. Please try again.', 'error')
+    return redirect(url_for('index'))
+
+@app.errorhandler(404)
+def not_found_error(error):
+    flash('Page not found.', 'error')
+    return redirect(url_for('index'))
+
 # Health check endpoint for Render
 @app.route('/health')
 def health_check():
@@ -336,6 +384,15 @@ def api_get_application(app_id):
 
 if __name__ == '__main__':
     with app.app_context():
+        # Handle database URL for Render
+        if os.environ.get('DATABASE_URL'):
+            # Render provides DATABASE_URL, but SQLAlchemy expects it to start with postgresql://
+            # Convert postgres:// to postgresql://
+            database_url = os.environ.get('DATABASE_URL')
+            if database_url.startswith('postgres://'):
+                database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        
         db.create_all()
         # Create default admin user if not exists
         if not Admin.query.filter_by(username='admin').first():
