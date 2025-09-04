@@ -480,7 +480,8 @@ def api_get_application(app_id):
         'submitted_at': application.submitted_at.isoformat() if application.submitted_at else None
     })
 
-if __name__ == '__main__':
+# Initialize database tables
+def init_db():
     with app.app_context():
         # Handle database URL for Render
         if os.environ.get('DATABASE_URL'):
@@ -490,14 +491,26 @@ if __name__ == '__main__':
             if database_url.startswith('postgres://'):
                 database_url = database_url.replace('postgres://', 'postgresql://', 1)
             app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+            logger.info(f"Using Render database: {database_url}")
+        else:
+            logger.info(f"Using local database: {app.config['SQLALCHEMY_DATABASE_URI']}")
         
         db.create_all()
+        logger.info("Database tables created successfully")
+        
         # Create default admin user if not exists
         if not Admin.query.filter_by(username='admin').first():
             admin = Admin(username='admin', password='admin123')
             db.session.add(admin)
             db.session.commit()
-    
-    # For production deployment on Render
+            logger.info("Default admin user created")
+        else:
+            logger.info("Admin user already exists")
+
+# Call init_db when the app starts
+init_db()
+
+if __name__ == '__main__':
+    # For local development
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
