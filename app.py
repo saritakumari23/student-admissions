@@ -1,5 +1,6 @@
 import os
 import tempfile
+import logging
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -16,6 +17,10 @@ import io
 import uuid
 import traceback
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///admissions.db')
@@ -24,9 +29,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Use temp directory for uploads on Render
 if os.environ.get('RENDER'):
     app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+    logger.info(f"Using temp directory for uploads: {app.config['UPLOAD_FOLDER']}")
 else:
     app.config['UPLOAD_FOLDER'] = 'uploads'
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    logger.info(f"Using local uploads directory: {app.config['UPLOAD_FOLDER']}")
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -108,30 +115,50 @@ def apply():
     form = ApplicationForm()
     if form.validate_on_submit():
         try:
+            logger.info("Starting application submission process")
+            
             # Generate unique application ID
             application_id = f"APP{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+            logger.info(f"Generated application ID: {application_id}")
             
             # Save uploaded files
             degree_cert = form.degree_certificate.data
             id_proof_file = form.id_proof.data
             
             if not degree_cert or not id_proof_file:
+                logger.error("Missing required files")
                 flash('Please upload both required documents.', 'error')
                 return render_template('apply.html', form=form)
+            
+            logger.info(f"Degree cert filename: {degree_cert.filename}")
+            logger.info(f"ID proof filename: {id_proof_file.filename}")
             
             degree_filename = secure_filename(f"{application_id}_degree_{degree_cert.filename}")
             id_filename = secure_filename(f"{application_id}_id_{id_proof_file.filename}")
             
+            logger.info(f"Secure filenames - Degree: {degree_filename}, ID: {id_filename}")
+            
             # Save files with error handling
             try:
-                degree_cert.save(os.path.join(app.config['UPLOAD_FOLDER'], degree_filename))
-                id_proof_file.save(os.path.join(app.config['UPLOAD_FOLDER'], id_filename))
+                degree_path = os.path.join(app.config['UPLOAD_FOLDER'], degree_filename)
+                id_path = os.path.join(app.config['UPLOAD_FOLDER'], id_filename)
+                
+                logger.info(f"Saving degree cert to: {degree_path}")
+                logger.info(f"Saving ID proof to: {id_path}")
+                
+                degree_cert.save(degree_path)
+                id_proof_file.save(id_path)
+                
+                logger.info("Files saved successfully")
+                
             except Exception as e:
-                app.logger.error(f"File save error: {str(e)}")
+                logger.error(f"File save error: {str(e)}")
+                logger.error(traceback.format_exc())
                 flash('Error saving uploaded files. Please try again.', 'error')
                 return render_template('apply.html', form=form)
             
             # Create application record
+            logger.info("Creating application record")
             application = Application(
                 application_id=application_id,
                 first_name=form.first_name.data,
@@ -147,15 +174,17 @@ def apply():
                 id_proof=id_filename
             )
             
+            logger.info("Adding application to database")
             db.session.add(application)
             db.session.commit()
+            logger.info("Application saved to database successfully")
             
             flash(f'Application submitted successfully! Your application ID is: {application_id}', 'success')
             return redirect(url_for('application_status', application_id=application_id))
             
         except Exception as e:
-            app.logger.error(f"Application submission error: {str(e)}")
-            app.logger.error(traceback.format_exc())
+            logger.error(f"Application submission error: {str(e)}")
+            logger.error(traceback.format_exc())
             db.session.rollback()
             flash('An error occurred while submitting your application. Please try again.', 'error')
             return render_template('apply.html', form=form)
@@ -343,6 +372,75 @@ def internal_error(error):
 def not_found_error(error):
     flash('Page not found.', 'error')
     return redirect(url_for('index'))
+
+# Test endpoint for application without file uploads
+@app.route('/test-apply', methods=['GET', 'POST'])
+def test_apply():
+    if request.method == 'POST':
+        try:
+            logger.info("Testing application submission without files")
+            
+            # Generate unique application ID
+            application_id = f"TEST{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:8].upper()}"
+            logger.info(f"Generated test application ID: {application_id}")
+            
+            # Create application record without files
+            application = Application(
+                application_id=application_id,
+                first_name="Test",
+                last_name="User",
+                email="test@example.com",
+                phone="1234567890",
+                date_of_birth=datetime.now().date(),
+                address="Test Address",
+                program="computer_science",
+                previous_education="Test Education",
+                gpa=3.5,
+                degree_certificate="test_degree.pdf",
+                id_proof="test_id.pdf"
+            )
+            
+            logger.info("Adding test application to database")
+            db.session.add(application)
+            db.session.commit()
+            logger.info("Test application saved successfully")
+            
+            return jsonify({
+                'success': True,
+                'application_id': application_id,
+                'message': 'Test application submitted successfully'
+            })
+            
+        except Exception as e:
+            logger.error(f"Test application error: {str(e)}")
+            logger.error(traceback.format_exc())
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            })
+    
+    return '''
+    <h1>Test Application Submission</h1>
+    <form method="POST">
+        <button type="submit">Submit Test Application</button>
+    </form>
+    '''
+
+# Debug endpoint for testing
+@app.route('/debug')
+def debug_info():
+    info = {
+        'upload_folder': app.config['UPLOAD_FOLDER'],
+        'upload_folder_exists': os.path.exists(app.config['UPLOAD_FOLDER']),
+        'upload_folder_writable': os.access(app.config['UPLOAD_FOLDER'], os.W_OK),
+        'database_url': app.config['SQLALCHEMY_DATABASE_URI'],
+        'render_environment': os.environ.get('RENDER', 'False'),
+        'temp_dir': tempfile.gettempdir(),
+        'temp_dir_writable': os.access(tempfile.gettempdir(), os.W_OK)
+    }
+    return jsonify(info)
 
 # Health check endpoint for Render
 @app.route('/health')
