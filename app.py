@@ -296,6 +296,11 @@ def generate_admission_letter(application):
     doc.build(story)
     return filepath
 
+# Health check endpoint for Render
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()})
+
 # API Routes for testing
 @app.route('/api/applications', methods=['GET'])
 def api_get_applications():
@@ -338,4 +343,6 @@ if __name__ == '__main__':
             db.session.add(admin)
             db.session.commit()
     
-    app.run(debug=True)
+    # For production deployment on Render
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

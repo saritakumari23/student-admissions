@@ -169,6 +169,22 @@ student-admission-system/
 
 ## 🚀 Deployment
 
+### Render Deployment (Recommended)
+The easiest way to deploy this application is using Render:
+
+1. **Push to GitHub**: Ensure your code is in a GitHub repository
+2. **Connect to Render**: Follow the [Deployment Guide](DEPLOYMENT_GUIDE.md)
+3. **Automatic Deployment**: Render will automatically deploy your app
+4. **Access Your App**: Get a URL like `https://your-app-name.onrender.com`
+
+**Quick Deploy Steps:**
+- Sign up at [render.com](https://render.com)
+- Create new Web Service
+- Connect your GitHub repository
+- Set build command: `pip install -r requirements.txt`
+- Set start command: `gunicorn app:app`
+- Deploy!
+
 ### Development Environment
 The application is configured for development with SQLite database. For production:
 
